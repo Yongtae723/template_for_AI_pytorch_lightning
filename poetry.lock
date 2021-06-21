@@ -935,7 +935,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f7ea09a4d564878810f063bb52100d33e97d19f14f10acc4437cbea3acec241d"
+content-hash = "3877de46c83387ce0e7873c12fae54927c263b6f0f78d739e9f4d0ffec4181ca"
 
 [metadata.files]
 absl-py = [
