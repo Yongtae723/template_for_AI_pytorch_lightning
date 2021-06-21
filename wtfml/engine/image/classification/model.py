@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+from matplotlib import pyplot as plt
 
 import sys
 from efficientnet_pytorch import EfficientNet
@@ -21,7 +22,6 @@ def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(
         in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
     )
-
 
 
 class BasicBlock(nn.Module):
@@ -97,7 +97,7 @@ class Bottleneck(nn.Module):
 
 
 class SimpleAttentionResnetNetwork(nn.Module):
-    def __init__(self, num_classes,base_model_path=None, pre_trained: bool = True):
+    def __init__(self, num_classes, base_model_path=None, pre_trained: bool = True):
         super().__init__()
         depth = 50
         n = 2
@@ -108,7 +108,7 @@ class SimpleAttentionResnetNetwork(nn.Module):
         if base_model_path != None:
             base_model = torch.load(base_model_path, map_location="cpu")
         else:
-                base_model = torchvision.models.resnet50(pretrained=pre_trained)
+            base_model = torchvision.models.resnet50(pretrained=pre_trained)
         self.features = nn.Sequential(*[layer for layer in base_model.children()][:-2])
         self.attn_resnet_block = self._make_layer(
             block, 2048, n, stride=1, down_size=False
@@ -168,10 +168,8 @@ class SimpleAttentionResnetNetwork(nn.Module):
         return self.mask_, prediction
 
 
-
-
 class SimpleAttentionEfficientNetwork(nn.Module):
-    def __init__(self, num_classes,base_model_path=None, pre_trained: bool = True):
+    def __init__(self, num_classes, base_model_path=None, pre_trained: bool = True):
         super().__init__()
         depth = 50
         n = 2
@@ -183,9 +181,9 @@ class SimpleAttentionEfficientNetwork(nn.Module):
             self.base_model = torch.load(base_model_path, map_location="cpu")
         else:
             if pre_trained:
-                self.base_model = EfficientNet.from_pretrained('efficientnet-b4')
+                self.base_model = EfficientNet.from_pretrained("efficientnet-b4")
             else:
-                self.base_model = EfficientNet.from_name('efficientnet-b4')
+                self.base_model = EfficientNet.from_name("efficientnet-b4")
         self.attn_resnet_block = self._make_layer(
             block, 2048, n, stride=1, down_size=False
         )
@@ -242,4 +240,3 @@ class SimpleAttentionEfficientNetwork(nn.Module):
         B = x.shape[0]
         prediction = self.forward(x)
         return self.mask_, prediction
-

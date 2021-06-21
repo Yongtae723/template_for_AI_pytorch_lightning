@@ -9,6 +9,7 @@ from ..utils import AverageMeter
 
 try:
     from torch.cuda import amp
+
     _amp_available = True
 except ImportError:
     _amp_available = False
@@ -60,9 +61,7 @@ class Engine:
         self.model_fn = model_fn
         self.fp16 = fp16
         if self.fp16 and not _amp_available:
-            raise Exception(
-                "You want to use fp16 but dont have amp installed"
-            )
+            raise Exception("You want to use fp16 but dont have amp installed")
         self.use_mean_loss = use_mean_loss
         self.scaler = None
 

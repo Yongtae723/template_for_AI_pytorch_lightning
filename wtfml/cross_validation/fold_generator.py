@@ -5,16 +5,21 @@ __author__: Abhishek Thakur
 import pandas as pd
 import scipy as sp
 from sklearn import model_selection
+from typing import Optional, Union
 
 
 class FoldGenerator:
+    """
+    pd.DataFrameをn_split文だけ分割する、class
+    """
+
     def __init__(
         self,
-        targets,
-        num_splits=5,
-        shuffle=True,
-        task="binary_classification",
-        random_state=None,
+        targets: Union[pd.DataFrame, pd.Series],
+        num_splits: int = 5,
+        shuffle: bool = True,
+        task: str = "binary_classification",
+        random_state: Optional[int] = None,
     ):
         self.task = task
         self.targets = targets
@@ -58,7 +63,9 @@ class FoldGenerator:
             self.splits[fold_]["train_idx"] = trn
             self.splits[fold_]["valid_idx"] = val
 
-    def get_fold(self, data, fold):
+    def get_fold(
+        self, data: Union[pd.DataFrame, pd.Series], fold: int
+    ) -> Union[pd.DataFrame, pd.Series]:
         if fold >= self.num_splits or fold < 0:
             raise Exception("Invalid fold number specified")
         if isinstance(data, pd.DataFrame):

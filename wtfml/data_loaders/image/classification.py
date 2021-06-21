@@ -1,13 +1,14 @@
 """
 __author__: Abhishek Thakur
 """
+from typing import Optional, Tuple, Union
+import albumentations as A
 import cv2
-import torch
-
 import numpy as np
-
-from PIL import Image
-from PIL import ImageFile
+import pandas as pd
+import torch
+from albumentations.pytorch import ToTensorV2
+from PIL import Image, ImageFile
 
 try:
     import torch_xla.core.xla_model as xm
@@ -19,28 +20,52 @@ except ImportError:
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+albumentations = A.Compose(
+    [
+        A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3),
+        A.HueSaturationValue(),
+        A.RGBShift(),
+        A.RandomGamma(),
+        # A.GaussianBlur(p=0.3, blur_limit=(3, 3)),
+        # A.ElasticTransform(),
+        # A.ShiftScaleRotate(),
+        A.ToGray(p=0.2),
+        A.ImageCompression(quality_lower=95, p=0.3),
+        # A.CLAHE(tile_grid_size=(4, 4)),
+        # A.ISONoise(),
+        # A.HorizontalFlip(p=0.5),
+        # A.Resize(height=160, width=160, interpolation=cv2.INTER_LANCZOS4, p=1),
+        # ToTensorV2(),
+        # fixed_image_standardization,
+    ]
+)
+
+
 class ClassificationDataset:
+    """
+    クラシフィケーションタスク用のDataset
+    """
+
     def __init__(
         self,
-        image_paths,
-        targets,
-        resize,
+        image_paths: str,
+        targets: Union[pd.DataFrame, pd.Series, np.ndarray],
+        resize: Optional[Tuple],
         augmentations=None,
-        backend="pil",
-        channel_first=True,
+        backend: str = "pil",
     ):
         """
-        :param image_paths: list of paths to images
-        :param targets: numpy array
-        :param resize: tuple or None
-        :param augmentations: albumentations augmentations
+        Args:
+            :param image_paths: list of paths to images
+            :param targets: numpy array
+            :param resize: tuple or None
+            :param augmentations: albumentations augmentations
         """
         self.image_paths = image_paths
         self.targets = targets
         self.resize = resize
         self.augmentations = augmentations
         self.backend = backend
-        self.channel_first = channel_first
 
     def __len__(self):
         return len(self.image_paths)
@@ -71,8 +96,7 @@ class ClassificationDataset:
             image = augmented["image"]
         else:
             raise Exception("Backend not implemented")
-        if self.channel_first:
-            image = np.transpose(image, (2, 0, 1)).astype(np.float32)
+
         return {
             "image": torch.tensor(image),
             "targets": torch.tensor(targets),
@@ -82,12 +106,11 @@ class ClassificationDataset:
 class ClassificationDataLoader:
     def __init__(
         self,
-        image_paths,
-        targets,
-        resize,
+        image_paths: str,
+        targets: Union[pd.DataFrame, pd.Series, np.ndarray],
+        resize: Optional[Tuple],
         augmentations=None,
-        backend="pil",
-        channel_first=True,
+        backend: str = "pil",
     ):
         """
         :param image_paths: list of paths to images
@@ -100,7 +123,6 @@ class ClassificationDataLoader:
         self.resize = resize
         self.augmentations = augmentations
         self.backend = backend
-        self.channel_first = channel_first
         self.dataset = ClassificationDataset(
             image_paths=self.image_paths,
             targets=self.targets,
@@ -112,11 +134,11 @@ class ClassificationDataLoader:
 
     def fetch(
         self,
-        batch_size,
-        num_workers,
-        drop_last=False,
-        shuffle=True,
-        tpu=False,
+        batch_size: int,
+        num_workers: int,
+        drop_last: bool = False,
+        shuffle: bool = True,
+        tpu: bool = False,
         sampler=None,
     ):
         """
